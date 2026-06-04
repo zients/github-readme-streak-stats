@@ -1,0 +1,25 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { parseOptions } from "../src/options.ts";
+import { resolveTheme } from "../src/themes.ts";
+
+test("resolves radical theme colors", () => {
+  const theme = resolveTheme(parseOptions("user=zients&theme=radical"));
+  assert.equal(theme.background, "#141321");
+  assert.equal(theme.border, "#E4E2E2");
+  assert.equal(theme.ring, "#FE428E");
+  assert.equal(theme.fire, "#FE428E");
+  assert.equal(theme.currentStreakNumber, "#F8D847");
+  assert.equal(theme.dateText, "#A9FEF7");
+});
+
+test("option color overrides theme", () => {
+  const theme = resolveTheme(parseOptions("user=zients&theme=radical&ring=123456&fire=abcdef"));
+  assert.equal(theme.ring, "#123456");
+  assert.equal(theme.fire, "#abcdef");
+});
+
+test("hide border makes border transparent", () => {
+  const theme = resolveTheme(parseOptions("user=zients&theme=radical&hide_border=true"));
+  assert.equal(theme.border, "transparent");
+});
