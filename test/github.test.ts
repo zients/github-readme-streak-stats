@@ -41,6 +41,15 @@ test("throws helpful errors for GraphQL errors", async () => {
   );
 });
 
+test("throws helpful error for null GraphQL response payload", async () => {
+  const fetchImpl = async () => new Response("null", { status: 200 });
+
+  await assert.rejects(
+    () => fetchContributionDays({ user: "zients", token: "token", startingYear: 2026, currentYear: 2026, fetchImpl }),
+    /GitHub response did not include contribution calendar weeks\./,
+  );
+});
+
 test("validates required user and token before fetching", async () => {
   let fetchCalls = 0;
   const fetchImpl = async () => {
@@ -75,6 +84,65 @@ test("throws HTTP status errors before parsing non-OK response bodies", async ()
     () => fetchContributionDays({ user: "zients", token: "token", fetchImpl }),
     /GitHub GraphQL request failed with HTTP 500\./,
   );
+});
+
+test("requests each year with GraphQL variables instead of interpolating user", async () => {
+  const calls: Array<{ url: string | URL | Request; init: RequestInit | undefined }> = [];
+  const fetchImpl = async (url: string | URL | Request, init?: RequestInit) => {
+    calls.push({ url, init });
+    return new Response(JSON.stringify({
+      data: {
+        user: {
+          contributionsCollection: {
+            contributionCalendar: {
+              weeks: [],
+            },
+          },
+        },
+      },
+    }), { status: 200 });
+  };
+
+  await fetchContributionDays({
+    user: "octo-user",
+    token: "secret-token",
+    startingYear: 2025,
+    currentYear: 2026,
+    fetchImpl,
+  });
+
+  assert.equal(calls.length, 2);
+  const [firstCall, secondCall] = calls;
+  assert.ok(firstCall);
+  assert.ok(secondCall);
+
+  for (const call of calls) {
+    assert.equal(call.url, "https://api.github.com/graphql");
+    assert.equal(call.init?.method, "POST");
+    assert.equal((call.init?.headers as Record<string, string>).Authorization, "bearer secret-token");
+  }
+
+  const firstBody = JSON.parse(firstCall.init?.body as string) as {
+    query: string;
+    variables: { user: string; from: string; to: string };
+  };
+  const secondBody = JSON.parse(secondCall.init?.body as string) as {
+    query: string;
+    variables: { user: string; from: string; to: string };
+  };
+
+  assert.deepEqual(firstBody.variables, {
+    user: "octo-user",
+    from: "2025-01-01T00:00:00Z",
+    to: "2025-12-31T23:59:59Z",
+  });
+  assert.deepEqual(secondBody.variables, {
+    user: "octo-user",
+    from: "2026-01-01T00:00:00Z",
+    to: "2026-12-31T23:59:59Z",
+  });
+  assert.equal(firstBody.query.includes("octo-user"), false);
+  assert.equal(secondBody.query.includes("octo-user"), false);
 });
 
 test("throws malformed calendar error for invalid week entries", async () => {

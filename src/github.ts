@@ -69,7 +69,11 @@ async function fetchContributionDaysForYear(
     throw new Error(`GitHub GraphQL request failed with HTTP ${response.status}.`);
   }
 
-  const payload = await response.json() as GitHubGraphQLPayload;
+  const parsedPayload = await response.json() as unknown;
+  if (!isNonArrayObject(parsedPayload)) {
+    throw new Error("GitHub response did not include contribution calendar weeks.");
+  }
+  const payload = parsedPayload as GitHubGraphQLPayload;
 
   if (payload.errors?.length) {
     throw new Error(payload.errors.map((error) => error.message).join("; "));
@@ -98,7 +102,11 @@ async function fetchContributionDaysForYear(
 }
 
 function isContributionWeek(week: unknown): week is GitHubContributionWeek {
-  return typeof week === "object" && week !== null;
+  return isNonArrayObject(week);
+}
+
+function isNonArrayObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function validateRequiredInput(input: FetchContributionDaysInput): void {
