@@ -5,6 +5,23 @@ const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 type DayName = (typeof dayNames)[number];
 type RawOptions = Record<string, string>;
 
+const dayAliases: Record<string, DayName> = {
+  sun: "Sun",
+  sunday: "Sun",
+  mon: "Mon",
+  monday: "Mon",
+  tue: "Tue",
+  tuesday: "Tue",
+  wed: "Wed",
+  wednesday: "Wed",
+  thu: "Thu",
+  thursday: "Thu",
+  fri: "Fri",
+  friday: "Fri",
+  sat: "Sat",
+  saturday: "Sat",
+};
+
 export interface StreakOptions {
   user: string;
   theme: string;
@@ -82,7 +99,17 @@ function parseRawOptions(input: string): RawOptions {
   }
 
   if (value.startsWith("{")) {
-    const parsed = JSON.parse(value) as Record<string, unknown>;
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      throw new Error("Invalid JSON options.");
+    }
+
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("Invalid JSON options.");
+    }
 
     return Object.fromEntries(
       Object.entries(parsed)
@@ -119,9 +146,8 @@ function parseOptionalNumber(value: string | undefined): number | undefined {
 function parseExcludeDays(value: string): DayName[] {
   return value
     .split(",")
-    .map((day) => day.trim().slice(0, 3).toLowerCase())
-    .map((day) => (day ? `${day[0]?.toUpperCase()}${day.slice(1)}` : ""))
-    .filter((day): day is DayName => dayNames.includes(day as DayName));
+    .map((day) => dayAliases[day.trim().toLowerCase()])
+    .filter((day): day is DayName => day !== undefined);
 }
 
 function sanitizeUser(value: string): string {
