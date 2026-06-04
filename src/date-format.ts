@@ -15,14 +15,20 @@ export function formatNumber(value: number, options: FormatOptions): string {
   return new Intl.NumberFormat(options.locale).format(value);
 }
 
+export function formatDate(date: string, options: FormatOptions): string {
+  if (date === "") return "";
+
+  return formatSingleDate(date, options, true);
+}
+
 export function formatDateRange(start: string, end: string, options: FormatOptions): string {
   if (start === "" || end === "") return "";
 
   const includeYear = start.slice(0, 4) !== end.slice(0, 4);
-  return `${formatDate(start, options, includeYear)} - ${formatDate(end, options, includeYear)}`;
+  return `${formatSingleDate(start, options, includeYear)} - ${formatSingleDate(end, options, includeYear)}`;
 }
 
-function formatDate(date: string, options: FormatOptions, includeYear: boolean): string {
+function formatSingleDate(date: string, options: FormatOptions, includeYear: boolean): string {
   if (options.dateFormat) {
     return applyCustomDateFormat(date, options.dateFormat, includeYear);
   }

@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatDateRange, formatNumber } from "../src/date-format.ts";
+import { formatDate, formatDateRange, formatNumber } from "../src/date-format.ts";
+
+test("formats single dates with year by default", () => {
+  assert.equal(formatDate("2019-07-19", { locale: "en" }), "Jul 19, 2019");
+});
+
+test("formats single dates with bracketed custom date format", () => {
+  assert.equal(
+    formatDate("2019-07-19", { locale: "en", dateFormat: "M j[, Y]" }),
+    "Jul 19, 2019",
+  );
+});
 
 test("formats current-year date range without repeated year by default", () => {
   assert.equal(formatDateRange("2026-05-22", "2026-06-04", { locale: "en" }), "May 22 - Jun 4");

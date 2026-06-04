@@ -30,10 +30,10 @@ test("escapes user-controlled text", () => {
     options,
     theme: resolveTheme(options),
     stats: { ...stats, firstContribution: "2026-01-01" },
-    title: "zien<&>",
+    title: "zien<>&\"'",
   });
-  assert.match(svg, /zien&lt;&amp;&gt;/);
-  assert.doesNotMatch(svg, /zien<&>/);
+  assert.match(svg, /zien&lt;&gt;&amp;&quot;&apos;/);
+  assert.doesNotMatch(svg, /zien<>&"'/);
 });
 
 test("respects hidden side sections", () => {
@@ -42,4 +42,19 @@ test("respects hidden side sections", () => {
   assert.doesNotMatch(svg, /Total Contributions/);
   assert.doesNotMatch(svg, /Longest Streak/);
   assert.match(svg, /Current Streak/);
+});
+
+test("formats first contribution with configured date format", () => {
+  const options = parseOptions("user=zients&date_format=M j[, Y]");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+  assert.match(svg, /Since Jul 19, 2019/);
+  assert.doesNotMatch(svg, /Since 2019-07-19/);
+});
+
+test("respects hidden current streak section", () => {
+  const options = parseOptions("user=zients&hide_current_streak=true");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+  assert.match(svg, /Total Contributions/);
+  assert.doesNotMatch(svg, /Current Streak/);
+  assert.match(svg, /Longest Streak/);
 });

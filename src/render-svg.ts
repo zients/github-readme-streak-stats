@@ -1,7 +1,7 @@
 import type { StreakOptions } from "./options.js";
 import type { ResolvedTheme } from "./themes.js";
 import type { StatsResult } from "./stats.js";
-import { formatDateRange, formatNumber } from "./date-format.js";
+import { formatDate, formatDateRange, formatNumber } from "./date-format.js";
 
 export interface RenderSvgInput {
   options: StreakOptions;
@@ -48,7 +48,7 @@ export function renderSvg(input: RenderSvgInput): string {
       y: centerY,
       value: formatNumber(stats.totalContributions, numberOptions),
       label: "Total Contributions",
-      range: stats.firstContribution === "" ? "" : `Since ${stats.firstContribution}`,
+      range: stats.firstContribution === "" ? "" : `Since ${formatDate(stats.firstContribution, dateOptions)}`,
       theme,
     }));
   }
