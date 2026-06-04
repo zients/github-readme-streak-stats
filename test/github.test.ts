@@ -167,4 +167,58 @@ test("throws malformed calendar error for invalid week entries", async () => {
     () => fetchContributionDays({ user: "zients", token: "token", fetchImpl: () => fetchImpl([null]) }),
     /GitHub response included malformed contribution calendar weeks\./,
   );
+  await assert.rejects(
+    () => fetchContributionDays({
+      user: "zients",
+      token: "token",
+      fetchImpl: () => fetchImpl([{ contributionDays: null }]),
+    }),
+    /GitHub response included malformed contribution calendar weeks\./,
+  );
+  await assert.rejects(
+    () => fetchContributionDays({
+      user: "zients",
+      token: "token",
+      fetchImpl: () => fetchImpl([{ contributionDays: {} }]),
+    }),
+    /GitHub response included malformed contribution calendar weeks\./,
+  );
+  await assert.rejects(
+    () => fetchContributionDays({
+      user: "zients",
+      token: "token",
+      fetchImpl: () => fetchImpl([{ contributionDays: [null] }]),
+    }),
+    /GitHub response included malformed contribution calendar weeks\./,
+  );
+  await assert.rejects(
+    () => fetchContributionDays({
+      user: "zients",
+      token: "token",
+      fetchImpl: () => fetchImpl([{ contributionDays: [{ date: "2026-06-04", contributionCount: "2" }] }]),
+    }),
+    /GitHub response included malformed contribution calendar weeks\./,
+  );
+});
+
+test("throws malformed response error for invalid GraphQL error entries", async () => {
+  const fetchImpl = async (errors: unknown) =>
+    new Response(JSON.stringify({ errors }), { status: 200 });
+
+  await assert.rejects(
+    () => fetchContributionDays({
+      user: "zients",
+      token: "token",
+      fetchImpl: () => fetchImpl("bad"),
+    }),
+    /GitHub response did not include contribution calendar weeks\./,
+  );
+  await assert.rejects(
+    () => fetchContributionDays({
+      user: "zients",
+      token: "token",
+      fetchImpl: () => fetchImpl([{ message: 123 }]),
+    }),
+    /GitHub response did not include contribution calendar weeks\./,
+  );
 });

@@ -26,7 +26,7 @@ interface GitHubGraphQLPayload {
       };
     } | null;
   };
-  errors?: GitHubGraphQLError[];
+  errors?: unknown;
 }
 
 export async function fetchContributionDays(input: FetchContributionDaysInput): Promise<ContributionDay[]> {
@@ -75,8 +75,13 @@ async function fetchContributionDaysForYear(
   }
   const payload = parsedPayload as GitHubGraphQLPayload;
 
-  if (payload.errors?.length) {
-    throw new Error(payload.errors.map((error) => error.message).join("; "));
+  if (payload.errors !== undefined) {
+    if (!isGitHubGraphQLErrors(payload.errors)) {
+      throw new Error("GitHub response did not include contribution calendar weeks.");
+    }
+    if (payload.errors.length) {
+      throw new Error(payload.errors.map((error) => error.message).join("; "));
+    }
   }
 
   const user = payload.data?.user;
@@ -103,6 +108,15 @@ async function fetchContributionDaysForYear(
 
 function isContributionWeek(week: unknown): week is GitHubContributionWeek {
   return isNonArrayObject(week);
+}
+
+function isGitHubGraphQLErrors(errors: unknown): errors is GitHubGraphQLError[] {
+  return Array.isArray(errors)
+    && errors.every((error) => (
+      isNonArrayObject(error)
+      && typeof error.message === "string"
+      && error.message.trim() !== ""
+    ));
 }
 
 function isNonArrayObject(value: unknown): value is Record<string, unknown> {
