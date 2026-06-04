@@ -66,7 +66,9 @@ async function fetchContributionDaysForYear(
   });
 
   if (!response.ok) {
-    throw new Error(`GitHub GraphQL request failed with HTTP ${response.status}.`);
+    const responseMessage = extractGitHubHttpErrorMessage(await response.text());
+    const messageDetail = responseMessage ? `: ${responseMessage}` : "";
+    throw new Error(`GitHub GraphQL request failed with HTTP ${response.status}${messageDetail}.`);
   }
 
   const parsedPayload = await response.json() as unknown;
@@ -121,6 +123,20 @@ function isGitHubGraphQLErrors(errors: unknown): errors is GitHubGraphQLError[] 
 
 function isNonArrayObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function extractGitHubHttpErrorMessage(responseText: string): string | undefined {
+  try {
+    const parsedBody = JSON.parse(responseText) as unknown;
+    if (isNonArrayObject(parsedBody) && typeof parsedBody.message === "string") {
+      const message = parsedBody.message.trim();
+      return message === "" ? undefined : message;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
 }
 
 function validateRequiredInput(input: FetchContributionDaysInput): void {

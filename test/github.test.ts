@@ -77,12 +77,30 @@ test("validates required user and token before fetching", async () => {
   assert.equal(fetchCalls, 0);
 });
 
-test("throws HTTP status errors before parsing non-OK response bodies", async () => {
+test("falls back to HTTP status errors for non-JSON non-OK response bodies", async () => {
   const fetchImpl = async () => new Response("not json", { status: 500 });
 
   await assert.rejects(
     () => fetchContributionDays({ user: "zients", token: "token", fetchImpl }),
     /GitHub GraphQL request failed with HTTP 500\./,
+  );
+});
+
+test("includes GitHub error messages from non-OK JSON response bodies", async () => {
+  const fetchImpl = async () => new Response(JSON.stringify({ message: "Bad credentials" }), { status: 401 });
+
+  await assert.rejects(
+    () => fetchContributionDays({ user: "zients", token: "bad", fetchImpl }),
+    /GitHub GraphQL request failed with HTTP 401: Bad credentials\./,
+  );
+});
+
+test("throws helpful error when the GitHub user is missing", async () => {
+  const fetchImpl = async () => new Response(JSON.stringify({ data: { user: null } }), { status: 200 });
+
+  await assert.rejects(
+    () => fetchContributionDays({ user: "zients", token: "token", fetchImpl }),
+    /Could not find GitHub user zients\./,
   );
 });
 
