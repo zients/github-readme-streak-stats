@@ -89,8 +89,13 @@ export function renderSvg(input: RenderSvgInput): string {
   parts.push(
     "</g>",
     `<rect x='0.5' y='0.5' width='${width - 1}' height='${height - 1}' rx='${Math.max(radius - 0.5, 0)}' fill='none' stroke='${escapeXml(theme.border)}'/>`,
-    "</svg>",
   );
+
+  if (options.mode === "daily" && options.excludeDays.length > 0) {
+    parts.push(excludedDaysLabel(options.excludeDays, theme.excludedDaysLabel, y));
+  }
+
+  parts.push("</svg>");
 
   return parts.join("");
 }
@@ -163,6 +168,16 @@ function createVerticalScale(height: number): (value: number) => number {
   const scale = height / defaultHeight;
 
   return (value: number) => Number((value * scale).toFixed(2));
+}
+
+function excludedDaysLabel(
+  days: string[],
+  color: string,
+  y: (value: number) => number,
+): string {
+  const text = `* Excluding ${days.join(", ")}`;
+  // 186 = 9px above the bottom of the default 195px-tall card (scaled by y())
+  return `<text x='12' y='${y(186)}' fill='${escapeXml(color)}' font-family='Segoe UI, Ubuntu, sans-serif' font-size='10' font-weight='400'>${escapeXml(text)}</text>`;
 }
 
 function escapeXml(value: string): string {

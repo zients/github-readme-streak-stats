@@ -111,7 +111,7 @@ After the workflow commits `profile/streak.svg`, reference it from your profile 
 | `currStreakLabel` | Theme value | Current-streak label color override. |
 | `sideLabels` | Theme value | Total and longest streak label color override. |
 | `dates` | Theme value | Date and range text color override. |
-| `excludeDaysLabel` | Theme value | Parsed color override for compatibility; the current SVG renderer does not display an excluded-days label. |
+| `excludeDaysLabel` | Theme value | Color of the excluded-days note rendered at the bottom-left when `exclude_days` is set (daily mode only). |
 | `date_format` | Locale default date format | Custom date format. Supported tokens are `Y`, `M`, `n`, `j`, and `d`; this is not a full date-fns or Moment format parser. Bracketed text is included for single dates and for rendered ranges that include a year; it is omitted for same-year ranges. |
 | `locale` | `en` | Locale used for number formatting and default date formatting. |
 | `short_numbers` | `false` | Uses compact number formatting when true. |
