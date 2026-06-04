@@ -50,6 +50,15 @@ test("throws helpful error for null GraphQL response payload", async () => {
   );
 });
 
+test("throws helpful error for invalid JSON in successful GitHub responses", async () => {
+  const fetchImpl = async () => new Response("not json", { status: 200 });
+
+  await assert.rejects(
+    () => fetchContributionDays({ user: "zients", token: "token", startingYear: 2026, currentYear: 2026, fetchImpl }),
+    /GitHub response was not valid JSON\./,
+  );
+});
+
 test("validates required user and token before fetching", async () => {
   let fetchCalls = 0;
   const fetchImpl = async () => {

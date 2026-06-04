@@ -71,7 +71,13 @@ async function fetchContributionDaysForYear(
     throw new Error(`GitHub GraphQL request failed with HTTP ${response.status}${messageDetail}.`);
   }
 
-  const parsedPayload = await response.json() as unknown;
+  let parsedPayload: unknown;
+  try {
+    parsedPayload = await response.json() as unknown;
+  } catch {
+    throw new Error("GitHub response was not valid JSON.");
+  }
+
   if (!isNonArrayObject(parsedPayload)) {
     throw new Error("GitHub response did not include contribution calendar weeks.");
   }
