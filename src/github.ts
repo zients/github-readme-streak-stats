@@ -79,7 +79,7 @@ async function fetchContributionDaysForYear(
 
   if (payload.errors !== undefined) {
     if (!isGitHubGraphQLErrors(payload.errors)) {
-      throw new Error("GitHub response did not include contribution calendar weeks.");
+      throw new Error("GitHub response included malformed GraphQL errors.");
     }
     if (payload.errors.length) {
       throw new Error(payload.errors.map((error) => error.message).join("; "));

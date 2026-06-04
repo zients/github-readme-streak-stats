@@ -219,7 +219,7 @@ test("throws malformed calendar error for invalid week entries", async () => {
   );
 });
 
-test("throws malformed response error for invalid GraphQL error entries", async () => {
+test("throws malformed GraphQL errors message for invalid GraphQL error entries", async () => {
   const fetchImpl = async (errors: unknown) =>
     new Response(JSON.stringify({ errors }), { status: 200 });
 
@@ -229,7 +229,7 @@ test("throws malformed response error for invalid GraphQL error entries", async 
       token: "token",
       fetchImpl: () => fetchImpl("bad"),
     }),
-    /GitHub response did not include contribution calendar weeks\./,
+    /GitHub response included malformed GraphQL errors\./,
   );
   await assert.rejects(
     () => fetchContributionDays({
@@ -237,6 +237,6 @@ test("throws malformed response error for invalid GraphQL error entries", async 
       token: "token",
       fetchImpl: () => fetchImpl([{ message: 123 }]),
     }),
-    /GitHub response did not include contribution calendar weeks\./,
+    /GitHub response included malformed GraphQL errors\./,
   );
 });
