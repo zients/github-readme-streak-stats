@@ -147,6 +147,12 @@ test("requests each year with GraphQL variables instead of interpolating user", 
     assert.equal(call.url, "https://api.github.com/graphql");
     assert.equal(call.init?.method, "POST");
     assert.equal((call.init?.headers as Record<string, string>).Authorization, "bearer secret-token");
+    assert.equal((call.init?.headers as Record<string, string>)["Content-Type"], "application/json");
+    assert.equal((call.init?.headers as Record<string, string>).Accept, "application/vnd.github+json");
+    assert.equal(
+      (call.init?.headers as Record<string, string>)["User-Agent"],
+      "zients-github-readme-streak-stats",
+    );
   }
 
   const firstBody = JSON.parse(firstCall.init?.body as string) as {

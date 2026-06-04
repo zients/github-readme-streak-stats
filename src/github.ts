@@ -52,7 +52,7 @@ async function fetchContributionDaysForYear(
     headers: {
       Authorization: `bearer ${input.token}`,
       "Content-Type": "application/json",
-      Accept: "application/vnd.github.v4.idl",
+      Accept: "application/vnd.github+json",
       "User-Agent": "zients-github-readme-streak-stats",
     },
     body: JSON.stringify({
