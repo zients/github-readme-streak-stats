@@ -86,7 +86,7 @@ async function fetchContributionDaysForYear(
   }
 
   return weeks.flatMap((week) => {
-    if (!Array.isArray(week.contributionDays)) {
+    if (!isContributionWeek(week) || !Array.isArray(week.contributionDays)) {
       throw new Error("GitHub response included malformed contribution calendar weeks.");
     }
     if (!week.contributionDays.every(isContributionDay)) {
@@ -95,6 +95,10 @@ async function fetchContributionDaysForYear(
 
     return week.contributionDays;
   });
+}
+
+function isContributionWeek(week: unknown): week is GitHubContributionWeek {
+  return typeof week === "object" && week !== null;
 }
 
 function validateRequiredInput(input: FetchContributionDaysInput): void {

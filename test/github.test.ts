@@ -77,14 +77,14 @@ test("throws HTTP status errors before parsing non-OK response bodies", async ()
   );
 });
 
-test("throws malformed calendar error for invalid week contribution days", async () => {
-  const fetchImpl = async () =>
+test("throws malformed calendar error for invalid week entries", async () => {
+  const fetchImpl = async (weeks: unknown[]) =>
     new Response(JSON.stringify({
       data: {
         user: {
           contributionsCollection: {
             contributionCalendar: {
-              weeks: [{}],
+              weeks,
             },
           },
         },
@@ -92,7 +92,11 @@ test("throws malformed calendar error for invalid week contribution days", async
     }), { status: 200 });
 
   await assert.rejects(
-    () => fetchContributionDays({ user: "zients", token: "token", fetchImpl }),
+    () => fetchContributionDays({ user: "zients", token: "token", fetchImpl: () => fetchImpl([{}]) }),
+    /GitHub response included malformed contribution calendar weeks\./,
+  );
+  await assert.rejects(
+    () => fetchContributionDays({ user: "zients", token: "token", fetchImpl: () => fetchImpl([null]) }),
     /GitHub response included malformed contribution calendar weeks\./,
   );
 });
