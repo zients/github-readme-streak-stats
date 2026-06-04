@@ -97,7 +97,7 @@ After the workflow commits `profile/streak.svg`, reference it from your profile 
 | Option | Default | Current behavior |
 | --- | --- | --- |
 | `user` | `GITHUB_REPOSITORY_OWNER` if available | GitHub username to measure. Non-alphanumeric and non-hyphen characters are removed. The action fails if no username is available. |
-| `theme` | `default` | Theme name. Supported themes are `default`, `dark`, `highcontrast`, and `radical`. Unknown themes fall back to `default`. |
+| `theme` | `default` | Theme name. Supported: `default`, `dark`, `highcontrast`, `radical`, `dracula`, `tokyonight`, `gruvbox`, `onedark`, `monokai`, `synthwave`, `merko`, `cobalt`, `prussian`, `vue`, `vue-dark`, `transparent`. Colors track upstream. Unknown themes fall back to `default`. |
 | `type` | `svg` | Output type. Only `svg` is supported; any other value fails the action. |
 | `hide_border` | `false` | Hides the card border when true. |
 | `border_radius` | `4.5` | Positive card border radius. Invalid or non-positive values use the default. |
