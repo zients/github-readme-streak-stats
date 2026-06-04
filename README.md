@@ -37,14 +37,15 @@ jobs:
 
       - name: Commit streak stats
         run: |
-          if git diff --quiet -- profile/streak.svg; then
+          git add profile/streak.svg
+
+          if git diff --cached --quiet -- profile/streak.svg; then
             echo "No streak SVG changes to commit."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add profile/streak.svg
           git commit -m "Update streak stats"
           git push
 ```
@@ -58,14 +59,15 @@ Use a guarded commit step so scheduled runs do not fail when the SVG has not cha
 ```yaml
 - name: Commit streak stats
   run: |
-    if git diff --quiet -- profile/streak.svg; then
+    git add profile/streak.svg
+
+    if git diff --cached --quiet -- profile/streak.svg; then
       echo "No streak SVG changes to commit."
       exit 0
     fi
 
     git config user.name "github-actions[bot]"
     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-    git add profile/streak.svg
     git commit -m "Update streak stats"
     git push
 ```
