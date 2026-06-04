@@ -105,7 +105,7 @@ export function resolveTheme(options: StreakOptions): ResolvedTheme {
 }
 
 function isThemeName(value: string): value is ThemeName {
-  return value in themes;
+  return Object.hasOwn(themes, value);
 }
 
 function normalizeColor(value: StreakOptions[keyof StreakOptions]): string | undefined {

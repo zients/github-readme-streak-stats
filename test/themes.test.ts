@@ -23,3 +23,32 @@ test("hide border makes border transparent", () => {
   const theme = resolveTheme(parseOptions("user=zients&theme=radical&hide_border=true"));
   assert.equal(theme.border, "transparent");
 });
+
+test("unknown theme falls back to default", () => {
+  const theme = resolveTheme(parseOptions("user=zients&theme=missing"));
+  assert.equal(theme.background, "#FFFFFF");
+  assert.equal(theme.ring, "#00E676");
+  assert.equal(theme.currentStreakNumber, "#151515");
+});
+
+test("inherited theme keys fall back to default", () => {
+  const theme = resolveTheme(parseOptions("user=zients&theme=toString"));
+  assert.equal(theme.background, "#FFFFFF");
+  assert.equal(theme.ring, "#00E676");
+  assert.equal(theme.currentStreakNumber, "#151515");
+});
+
+test("passes through special color values", () => {
+  const theme = resolveTheme(parseOptions(JSON.stringify({
+    user: "zients",
+    background: "transparent",
+    border: "url(#border-gradient)",
+    ring: "rgb(1,2,3)",
+    fire: "#abcdef",
+  })));
+
+  assert.equal(theme.background, "transparent");
+  assert.equal(theme.border, "url(#border-gradient)");
+  assert.equal(theme.ring, "rgb(1,2,3)");
+  assert.equal(theme.fire, "#abcdef");
+});
