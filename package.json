@@ -1,0 +1,23 @@
+{
+  "name": "github-readme-streak-stats",
+  "version": "0.1.0",
+  "description": "Generate GitHub contribution streak SVGs in GitHub Actions.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "ncc build src/index.ts --out dist --target es2023 --source-map --license licenses.txt",
+    "verify": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vercel/ncc": "^0.38.3",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  }
+}
