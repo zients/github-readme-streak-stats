@@ -31147,6 +31147,19 @@ function buildContributionQuery() {
   }`;
 }
 
+;// CONCATENATED MODULE: ./src/json-output.ts
+function buildJson(stats, options) {
+    return {
+        user: options.user,
+        mode: stats.mode,
+        totalContributions: stats.totalContributions,
+        firstContribution: stats.firstContribution,
+        currentStreak: stats.currentStreak,
+        longestStreak: stats.longestStreak,
+        excludedDays: options.excludeDays,
+    };
+}
+
 ;// CONCATENATED MODULE: ./src/options.ts
 const dayNames = (/* unused pure expression or super */ null && (["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]));
 const dayAliases = {
@@ -31168,10 +31181,11 @@ const dayAliases = {
 function parseOptions(input) {
     const raw = parseRawOptions(input);
     const type = raw.type ?? "svg";
-    if (type !== "svg") {
-        throw new Error("This GitHub Action only supports SVG output.");
+    if (type !== "svg" && type !== "json") {
+        throw new Error("This GitHub Action only supports SVG or JSON output.");
     }
     return {
+        type,
         user: sanitizeUser(raw.user ?? process.env.GITHUB_REPOSITORY_OWNER ?? ""),
         theme: raw.theme ?? "default",
         hideBorder: parseBoolean(raw.hide_border, false),
@@ -31277,7 +31291,7 @@ function formatDateRange(start, end, options) {
 }
 function formatSingleDate(date, options, includeYear) {
     if (options.dateFormat) {
-        return applyCustomDateFormat(date, options.dateFormat, includeYear);
+        return applyCustomDateFormat(date, options.dateFormat, includeYear, options.locale);
     }
     const dateObj = new Date(`${date}T00:00:00Z`);
     return new Intl.DateTimeFormat(options.locale, {
@@ -31287,17 +31301,32 @@ function formatSingleDate(date, options, includeYear) {
         year: includeYear ? "numeric" : undefined,
     }).format(dateObj);
 }
-function applyCustomDateFormat(date, format, includeBracketed) {
+function applyCustomDateFormat(date, format, includeBracketed, locale) {
     const dateObj = new Date(`${date}T00:00:00Z`);
     const activeFormat = format.replace(/\[([^\]]+)\]/g, includeBracketed ? "$1" : "");
+    const part = (opts) => new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...opts }).format(dateObj);
+    const year = dateObj.getUTCFullYear();
+    const day = dateObj.getUTCDate();
     const replacements = {
-        Y: String(dateObj.getUTCFullYear()),
-        M: dateObj.toLocaleString("en", { timeZone: "UTC", month: "short" }),
+        Y: String(year),
+        y: String(year).slice(-2),
+        F: part({ month: "long" }),
+        M: part({ month: "short" }),
         n: String(dateObj.getUTCMonth() + 1),
-        j: String(dateObj.getUTCDate()),
-        d: String(dateObj.getUTCDate()).padStart(2, "0"),
+        l: part({ weekday: "long" }),
+        D: part({ weekday: "short" }),
+        j: String(day),
+        d: String(day).padStart(2, "0"),
+        S: ordinalSuffix(day),
     };
-    return activeFormat.replace(/[YMnjd]/g, (token) => replacements[token] ?? token);
+    return activeFormat.replace(/[YyFMnljdDS]/g, (token) => replacements[token] ?? token);
+}
+function ordinalSuffix(day) {
+    const mod100 = day % 100;
+    if (mod100 >= 11 && mod100 <= 13) {
+        return "th";
+    }
+    return { 1: "st", 2: "nd", 3: "rd" }[day % 10] ?? "th";
 }
 
 ;// CONCATENATED MODULE: ./src/render-svg.ts
@@ -31319,9 +31348,33 @@ function renderSvg(input) {
     const dateOptions = options.dateFormat === undefined
         ? { locale: options.locale }
         : { locale: options.locale, dateFormat: options.dateFormat };
+    const animate = !options.disableAnimations;
+    const fade = (delay) => animate ? ` style='opacity:0;animation:fadein .5s linear forwards ${delay}'` : "";
+    const styleBlock = animate
+        ? "<style>@keyframes currstreak{0%{font-size:3px;opacity:.2}80%{font-size:34px;opacity:1}100%{font-size:28px;opacity:1}}@keyframes fadein{0%{opacity:0}100%{opacity:1}}</style>"
+        : "";
+    // Animation timing mirrors upstream DenverCoder1 exactly (CSS-only so it runs in a
+    // GitHub README <img>): ring fades in, the current-streak number "pops" (currstreak
+    // keyframe overshoots 34px then settles to 28px), and the three columns cascade in.
+    // The shared .9s on the current label/range and the un-delayed pop are deliberate parity.
+    const animStyles = {
+        ring: fade(".4s"),
+        flame: fade(".5s"),
+        totalValue: fade(".6s"),
+        totalLabel: fade(".7s"),
+        totalRange: fade(".8s"),
+        currValue: animate ? " style='animation:currstreak .6s linear forwards'" : "",
+        currLabel: fade(".9s"),
+        currRange: fade(".9s"),
+        longValue: fade("1.2s"),
+        longLabel: fade("1.3s"),
+        longRange: fade("1.4s"),
+        excluded: fade(".9s"),
+    };
     const parts = [
         `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} ${height}' width='${width}px' height='${height}px' role='img' aria-label='${escapeXml(title)}'>`,
         `<title>${escapeXml(title)}</title>`,
+        styleBlock,
         `<defs><clipPath id='${clipId}'><rect width='${width}' height='${height}' rx='${radius}'/></clipPath><mask id='${ringMaskId}'><rect width='${width}' height='${height}' fill='white'/><ellipse cx='${centerX}' cy='${y(32)}' rx='13' ry='18' fill='black'/></mask></defs>`,
         `<rect width='${width}' height='${height}' rx='${radius}' fill='${escapeXml(theme.background)}'/>`,
         `<g clip-path='url(#${clipId})'>`,
@@ -31342,6 +31395,7 @@ function renderSvg(input) {
             label: "Total Contributions",
             range: stats.firstContribution === "" ? "" : `Since ${formatDate(stats.firstContribution, dateOptions)}`,
             theme,
+            styles: { value: animStyles.totalValue, label: animStyles.totalLabel, range: animStyles.totalRange },
         }));
     }
     if (!options.hideCurrentStreak) {
@@ -31357,6 +31411,7 @@ function renderSvg(input) {
             range: formatDateRange(stats.currentStreak.start, stats.currentStreak.end, dateOptions),
             theme,
             ringMaskId,
+            styles: { ring: animStyles.ring, flame: animStyles.flame, value: animStyles.currValue, label: animStyles.currLabel, range: animStyles.currRange },
         }));
     }
     if (!options.hideLongestStreak) {
@@ -31369,35 +31424,40 @@ function renderSvg(input) {
             label: "Longest Streak",
             range: formatDateRange(stats.longestStreak.start, stats.longestStreak.end, dateOptions),
             theme,
+            styles: { value: animStyles.longValue, label: animStyles.longLabel, range: animStyles.longRange },
         }));
     }
-    parts.push("</g>", `<rect x='0.5' y='0.5' width='${width - 1}' height='${height - 1}' rx='${Math.max(radius - 0.5, 0)}' fill='none' stroke='${escapeXml(theme.border)}'/>`, "</svg>");
+    parts.push("</g>", `<rect x='0.5' y='0.5' width='${width - 1}' height='${height - 1}' rx='${Math.max(radius - 0.5, 0)}' fill='none' stroke='${escapeXml(theme.border)}'/>`);
+    if (options.mode === "daily" && options.excludeDays.length > 0) {
+        parts.push(excludedDaysLabel(options.excludeDays, theme.excludedDaysLabel, y, animStyles.excluded));
+    }
+    parts.push("</svg>");
     return parts.join("");
 }
 function renderCurrentSection(input) {
-    const { x, circleY, flameY, valueY, labelY, rangeY, value, label, range, theme, ringMaskId } = input;
+    const { x, circleY, flameY, valueY, labelY, rangeY, value, label, range, theme, ringMaskId, styles } = input;
     return [
         `<g text-anchor='middle'>`,
-        `<circle cx='${x}' cy='${circleY}' r='40' fill='none' stroke='${escapeXml(theme.ring)}' stroke-width='5' mask='url(#${ringMaskId})'/>`,
-        `<path d='${flamePath}' transform='translate(${x} ${flameY}) scale(0.9)' fill='${escapeXml(theme.fire)}'/>`,
-        textLine(x, valueY, value, theme.currentStreakNumber, 28, 700),
-        textLine(x, labelY, label, theme.currentStreakLabel, 14, 700),
-        textLine(x, rangeY, range, theme.dateText, 12, 400),
+        `<circle cx='${x}' cy='${circleY}' r='40' fill='none' stroke='${escapeXml(theme.ring)}' stroke-width='5' mask='url(#${ringMaskId})'${styles.ring}/>`,
+        `<path d='${flamePath}' transform='translate(${x} ${flameY}) scale(0.9)' fill='${escapeXml(theme.fire)}'${styles.flame}/>`,
+        textLine(x, valueY, value, theme.currentStreakNumber, 28, 700, styles.value),
+        textLine(x, labelY, label, theme.currentStreakLabel, 14, 700, styles.label),
+        textLine(x, rangeY, range, theme.dateText, 12, 400, styles.range),
         `</g>`,
     ].join("");
 }
 function renderSideSection(input) {
-    const { x, valueY, labelY, rangeY, value, label, range, theme } = input;
+    const { x, valueY, labelY, rangeY, value, label, range, theme, styles } = input;
     return [
         `<g text-anchor='middle'>`,
-        textLine(x, valueY, value, theme.sideNumbers, 28, 700),
-        textLine(x, labelY, label, theme.sideLabels, 14, 400),
-        textLine(x, rangeY, range, theme.dateText, 12, 400),
+        textLine(x, valueY, value, theme.sideNumbers, 28, 700, styles.value),
+        textLine(x, labelY, label, theme.sideLabels, 14, 400, styles.label),
+        textLine(x, rangeY, range, theme.dateText, 12, 400, styles.range),
         `</g>`,
     ].join("");
 }
-function textLine(x, y, value, fill, size, weight) {
-    return `<text x='${x}' y='${y}' fill='${escapeXml(fill)}' font-family='Segoe UI, Ubuntu, sans-serif' font-size='${size}' font-weight='${weight}'>${escapeXml(value)}</text>`;
+function textLine(x, y, value, fill, size, weight, style = "") {
+    return `<text x='${x}' y='${y}' fill='${escapeXml(fill)}' font-family='Segoe UI, Ubuntu, sans-serif' font-size='${size}' font-weight='${weight}'${style}>${escapeXml(value)}</text>`;
 }
 function divider(x, height, stroke) {
     const y = createVerticalScale(height);
@@ -31406,6 +31466,11 @@ function divider(x, height, stroke) {
 function createVerticalScale(height) {
     const scale = height / defaultHeight;
     return (value) => Number((value * scale).toFixed(2));
+}
+function excludedDaysLabel(days, color, y, style = "") {
+    const text = `* Excluding ${days.join(", ")}`;
+    // 186 = 9px above the bottom of the default 195px-tall card (scaled by y())
+    return `<text x='12' y='${y(186)}' fill='${escapeXml(color)}' font-family='Segoe UI, Ubuntu, sans-serif' font-size='10' font-weight='400'${style}>${escapeXml(text)}</text>`;
 }
 function escapeXml(value) {
     return value
@@ -31538,43 +31603,25 @@ function calculateStats(days, options) {
 ;// CONCATENATED MODULE: ./src/themes.ts
 const themes = {
     default: {
-        background: "#FFFFFF",
-        border: "#E4E2E2",
-        stroke: "#E4E2E2",
-        ring: "#00E676",
-        fire: "#FF9800",
-        currentStreakNumber: "#151515",
-        sideNumbers: "#151515",
-        currentStreakLabel: "#151515",
-        sideLabels: "#151515",
-        dateText: "#737373",
-        excludedDaysLabel: "#737373",
+        background: "#FFFEFE", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#FB8C00", fire: "#FB8C00",
+        currentStreakNumber: "#151515", sideNumbers: "#151515",
+        currentStreakLabel: "#FB8C00", sideLabels: "#151515",
+        dateText: "#464646", excludedDaysLabel: "#464646",
     },
     dark: {
-        background: "#151515",
-        border: "#E4E2E2",
-        stroke: "#E4E2E2",
-        ring: "#00E676",
-        fire: "#FF9800",
-        currentStreakNumber: "#FFFFFF",
-        sideNumbers: "#FFFFFF",
-        currentStreakLabel: "#FFFFFF",
-        sideLabels: "#FFFFFF",
-        dateText: "#BDBDBD",
-        excludedDaysLabel: "#BDBDBD",
+        background: "#151515", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#FB8C00", fire: "#FB8C00",
+        currentStreakNumber: "#FEFEFE", sideNumbers: "#FEFEFE",
+        currentStreakLabel: "#FB8C00", sideLabels: "#FEFEFE",
+        dateText: "#9E9E9E", excludedDaysLabel: "#9E9E9E",
     },
     highcontrast: {
-        background: "#000000",
-        border: "#FFFFFF",
-        stroke: "#FFFFFF",
-        ring: "#FFFFFF",
-        fire: "#FFFFFF",
-        currentStreakNumber: "#FFFFFF",
-        sideNumbers: "#FFFFFF",
-        currentStreakLabel: "#FFFFFF",
-        sideLabels: "#FFFFFF",
-        dateText: "#FFFFFF",
-        excludedDaysLabel: "#FFFFFF",
+        background: "#000000", border: "#BEBEBE", stroke: "#BEBEBE",
+        ring: "#FB8C00", fire: "#FB8C00",
+        currentStreakNumber: "#FFFFFF", sideNumbers: "#FFFFFF",
+        currentStreakLabel: "#FB8C00", sideLabels: "#FFFFFF",
+        dateText: "#C5C5C5", excludedDaysLabel: "#C5C5C5",
     },
     radical: {
         background: "#141321",
@@ -31588,6 +31635,90 @@ const themes = {
         sideLabels: "#FE428E",
         dateText: "#A9FEF7",
         excludedDaysLabel: "#A9FEF7",
+    },
+    merko: {
+        background: "#0A0F0B", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#ABD200", fire: "#ABD200",
+        currentStreakNumber: "#B7D364", sideNumbers: "#ABD200",
+        currentStreakLabel: "#B7D364", sideLabels: "#ABD200",
+        dateText: "#68B587", excludedDaysLabel: "#68B587",
+    },
+    gruvbox: {
+        background: "#282828", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#FABD2F", fire: "#FABD2F",
+        currentStreakNumber: "#FE8019", sideNumbers: "#FABD2F",
+        currentStreakLabel: "#FE8019", sideLabels: "#FABD2F",
+        dateText: "#8EC07C", excludedDaysLabel: "#8EC07C",
+    },
+    tokyonight: {
+        background: "#1A1B27", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#70A5FD", fire: "#70A5FD",
+        currentStreakNumber: "#BF91F3", sideNumbers: "#70A5FD",
+        currentStreakLabel: "#BF91F3", sideLabels: "#70A5FD",
+        dateText: "#38BDAE", excludedDaysLabel: "#38BDAE",
+    },
+    onedark: {
+        background: "#282C34", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#E4BF7A", fire: "#E4BF7A",
+        currentStreakNumber: "#8EB573", sideNumbers: "#E4BF7A",
+        currentStreakLabel: "#8EB573", sideLabels: "#E4BF7A",
+        dateText: "#DF6D74", excludedDaysLabel: "#DF6D74",
+    },
+    cobalt: {
+        background: "#0000", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#E683D9", fire: "#E683D9",
+        currentStreakNumber: "#0480EF", sideNumbers: "#E683D9",
+        currentStreakLabel: "#0480EF", sideLabels: "#E683D9",
+        dateText: "#75EEB2", excludedDaysLabel: "#75EEB2",
+    },
+    synthwave: {
+        background: "#2B213A", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#E2E9EC", fire: "#E2E9EC",
+        currentStreakNumber: "#EF8539", sideNumbers: "#E2E9EC",
+        currentStreakLabel: "#EF8539", sideLabels: "#E2E9EC",
+        dateText: "#E5289E", excludedDaysLabel: "#E5289E",
+    },
+    dracula: {
+        background: "#282A36", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#FF6E96", fire: "#FF6E96",
+        currentStreakNumber: "#79DAFA", sideNumbers: "#FF6E96",
+        currentStreakLabel: "#79DAFA", sideLabels: "#FF6E96",
+        dateText: "#F8F8F2", excludedDaysLabel: "#F8F8F2",
+    },
+    prussian: {
+        background: "#172F45", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#BDDFFF", fire: "#BDDFFF",
+        currentStreakNumber: "#38A0FF", sideNumbers: "#BDDFFF",
+        currentStreakLabel: "#38A0FF", sideLabels: "#BDDFFF",
+        dateText: "#6E93B5", excludedDaysLabel: "#6E93B5",
+    },
+    monokai: {
+        background: "#272822", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#EB1F6A", fire: "#EB1F6A",
+        currentStreakNumber: "#E28905", sideNumbers: "#EB1F6A",
+        currentStreakLabel: "#E28905", sideLabels: "#EB1F6A",
+        dateText: "#F1F1EB", excludedDaysLabel: "#F1F1EB",
+    },
+    vue: {
+        background: "#FFFEFE", border: "#A8A8A8", stroke: "#A8A8A8",
+        ring: "#41B883", fire: "#41B883",
+        currentStreakNumber: "#41B883", sideNumbers: "#41B883",
+        currentStreakLabel: "#41B883", sideLabels: "#41B883",
+        dateText: "#273849", excludedDaysLabel: "#273849",
+    },
+    "vue-dark": {
+        background: "#273849", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#41B883", fire: "#41B883",
+        currentStreakNumber: "#41B883", sideNumbers: "#41B883",
+        currentStreakLabel: "#41B883", sideLabels: "#41B883",
+        dateText: "#FFFEFE", excludedDaysLabel: "#FFFEFE",
+    },
+    transparent: {
+        background: "#0000", border: "#E4E2E2", stroke: "#E4E2E2",
+        ring: "#006AFF", fire: "#006AFF",
+        currentStreakNumber: "#0579C3", sideNumbers: "#006AFF",
+        currentStreakLabel: "#0579C3", sideLabels: "#006AFF",
+        dateText: "#417E87", excludedDaysLabel: "#417E87",
     },
 };
 const optionOverrides = [
@@ -31645,6 +31776,7 @@ function normalizeColor(value) {
 
 
 
+
 async function run() {
     const optionsInput = getInput("options") || "";
     const outputPath = getInput("path") || "profile/streak.svg";
@@ -31667,13 +31799,15 @@ async function run() {
         excludeDays: options.excludeDays,
         today,
     });
-    const svg = renderSvg({
-        options,
-        theme: resolveTheme(options),
-        stats,
-        title: `${options.user}'s GitHub streak`,
-    });
-    await writeFileAtomically(outputPath, svg);
+    const output = options.type === "json"
+        ? JSON.stringify(buildJson(stats, options), null, 2)
+        : renderSvg({
+            options,
+            theme: resolveTheme(options),
+            stats,
+            title: `${options.user}'s GitHub streak`,
+        });
+    await writeFileAtomically(outputPath, output);
     setOutput("path", outputPath);
     info(`Wrote ${outputPath}`);
 }
