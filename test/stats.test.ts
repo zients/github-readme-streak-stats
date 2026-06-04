@@ -24,6 +24,24 @@ test("daily current streak uses yesterday when today has no contributions", () =
   assert.equal(stats.longestStreak.length, 2);
 });
 
+test("daily stats normalize duplicate dates and unsorted input", () => {
+  const stats = calculateStats(
+    [
+      { date: "2026-06-03", contributionCount: 1 },
+      { date: "2026-06-02", contributionCount: 2 },
+      { date: "2026-06-01", contributionCount: 0 },
+      { date: "2026-06-02", contributionCount: 3 },
+    ],
+    { ...baseOptions, today: "2026-06-03" },
+  );
+  assert.equal(stats.totalContributions, 6);
+  assert.equal(stats.firstContribution, "2026-06-02");
+  assert.equal(stats.currentStreak.length, 2);
+  assert.equal(stats.currentStreak.start, "2026-06-02");
+  assert.equal(stats.currentStreak.end, "2026-06-03");
+  assert.equal(stats.longestStreak.length, 2);
+});
+
 test("daily current streak includes today when active", () => {
   const stats = calculateStats(
     [
@@ -36,6 +54,28 @@ test("daily current streak includes today when active", () => {
   assert.equal(stats.currentStreak.length, 3);
   assert.equal(stats.currentStreak.end, "2026-06-04");
   assert.equal(stats.longestStreak.length, 3);
+});
+
+test("empty input returns empty stats", () => {
+  const stats = calculateStats([], { ...baseOptions, today: "2026-06-04" });
+  assert.equal(stats.totalContributions, 0);
+  assert.equal(stats.firstContribution, "");
+  assert.equal(stats.currentStreak.length, 0);
+  assert.equal(stats.longestStreak.length, 0);
+});
+
+test("all-inactive input returns no first contribution or streaks", () => {
+  const stats = calculateStats(
+    [
+      { date: "2026-06-01", contributionCount: 0 },
+      { date: "2026-06-02", contributionCount: 0 },
+      { date: "2026-06-03", contributionCount: 0 },
+    ],
+    { ...baseOptions, today: "2026-06-03" },
+  );
+  assert.equal(stats.firstContribution, "");
+  assert.equal(stats.currentStreak.length, 0);
+  assert.equal(stats.longestStreak.length, 0);
 });
 
 test("daily longest streak resets across missing calendar dates", () => {
@@ -74,4 +114,17 @@ test("weekly mode counts active weeks", () => {
   assert.equal(stats.currentStreak.length, 2);
   assert.equal(stats.longestStreak.length, 2);
   assert.equal(stats.totalContributions, 3);
+});
+
+test("weekly missing week breaks streaks", () => {
+  const stats = calculateStats(
+    [
+      { date: "2026-05-31", contributionCount: 1 },
+      { date: "2026-06-14", contributionCount: 2 },
+    ],
+    { mode: "weekly", excludeDays: [], today: "2026-06-14" },
+  );
+  assert.equal(stats.currentStreak.length, 1);
+  assert.equal(stats.currentStreak.start, "2026-06-14");
+  assert.equal(stats.longestStreak.length, 1);
 });
