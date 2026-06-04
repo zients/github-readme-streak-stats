@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { writeFileAtomically } from "./files.js";
 import { fetchContributionDays } from "./github.js";
+import { buildJson } from "./json-output.js";
 import { parseOptions } from "./options.js";
 import { renderSvg } from "./render-svg.js";
 import { calculateStats } from "./stats.js";
@@ -30,14 +31,16 @@ async function run(): Promise<void> {
     excludeDays: options.excludeDays,
     today,
   });
-  const svg = renderSvg({
-    options,
-    theme: resolveTheme(options),
-    stats,
-    title: `${options.user}'s GitHub streak`,
-  });
+  const output = options.type === "json"
+    ? JSON.stringify(buildJson(stats, options), null, 2)
+    : renderSvg({
+        options,
+        theme: resolveTheme(options),
+        stats,
+        title: `${options.user}'s GitHub streak`,
+      });
 
-  await writeFileAtomically(outputPath, svg);
+  await writeFileAtomically(outputPath, output);
   core.setOutput("path", outputPath);
   core.info(`Wrote ${outputPath}`);
 }

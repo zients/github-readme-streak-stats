@@ -28,9 +28,34 @@ export function renderSvg(input: RenderSvgInput): string {
   const dateOptions = options.dateFormat === undefined
     ? { locale: options.locale }
     : { locale: options.locale, dateFormat: options.dateFormat };
+  const animate = !options.disableAnimations;
+  const fade = (delay: string): string =>
+    animate ? ` style='opacity:0;animation:fadein .5s linear forwards ${delay}'` : "";
+  const styleBlock = animate
+    ? "<style>@keyframes currstreak{0%{font-size:3px;opacity:.2}80%{font-size:34px;opacity:1}100%{font-size:28px;opacity:1}}@keyframes fadein{0%{opacity:0}100%{opacity:1}}</style>"
+    : "";
+  // Animation timing mirrors upstream DenverCoder1 exactly (CSS-only so it runs in a
+  // GitHub README <img>): ring fades in, the current-streak number "pops" (currstreak
+  // keyframe overshoots 34px then settles to 28px), and the three columns cascade in.
+  // The shared .9s on the current label/range and the un-delayed pop are deliberate parity.
+  const animStyles = {
+    ring: fade(".4s"),
+    flame: fade(".5s"),
+    totalValue: fade(".6s"),
+    totalLabel: fade(".7s"),
+    totalRange: fade(".8s"),
+    currValue: animate ? " style='animation:currstreak .6s linear forwards'" : "",
+    currLabel: fade(".9s"),
+    currRange: fade(".9s"),
+    longValue: fade("1.2s"),
+    longLabel: fade("1.3s"),
+    longRange: fade("1.4s"),
+    excluded: fade(".9s"),
+  };
   const parts: string[] = [
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} ${height}' width='${width}px' height='${height}px' role='img' aria-label='${escapeXml(title)}'>`,
     `<title>${escapeXml(title)}</title>`,
+    styleBlock,
     `<defs><clipPath id='${clipId}'><rect width='${width}' height='${height}' rx='${radius}'/></clipPath><mask id='${ringMaskId}'><rect width='${width}' height='${height}' fill='white'/><ellipse cx='${centerX}' cy='${y(32)}' rx='13' ry='18' fill='black'/></mask></defs>`,
     `<rect width='${width}' height='${height}' rx='${radius}' fill='${escapeXml(theme.background)}'/>`,
     `<g clip-path='url(#${clipId})'>`,
@@ -54,6 +79,7 @@ export function renderSvg(input: RenderSvgInput): string {
       label: "Total Contributions",
       range: stats.firstContribution === "" ? "" : `Since ${formatDate(stats.firstContribution, dateOptions)}`,
       theme,
+      styles: { value: animStyles.totalValue, label: animStyles.totalLabel, range: animStyles.totalRange },
     }));
   }
 
@@ -70,6 +96,7 @@ export function renderSvg(input: RenderSvgInput): string {
       range: formatDateRange(stats.currentStreak.start, stats.currentStreak.end, dateOptions),
       theme,
       ringMaskId,
+      styles: { ring: animStyles.ring, flame: animStyles.flame, value: animStyles.currValue, label: animStyles.currLabel, range: animStyles.currRange },
     }));
   }
 
@@ -83,14 +110,20 @@ export function renderSvg(input: RenderSvgInput): string {
       label: "Longest Streak",
       range: formatDateRange(stats.longestStreak.start, stats.longestStreak.end, dateOptions),
       theme,
+      styles: { value: animStyles.longValue, label: animStyles.longLabel, range: animStyles.longRange },
     }));
   }
 
   parts.push(
     "</g>",
     `<rect x='0.5' y='0.5' width='${width - 1}' height='${height - 1}' rx='${Math.max(radius - 0.5, 0)}' fill='none' stroke='${escapeXml(theme.border)}'/>`,
-    "</svg>",
   );
+
+  if (options.mode === "daily" && options.excludeDays.length > 0) {
+    parts.push(excludedDaysLabel(options.excludeDays, theme.excludedDaysLabel, y, animStyles.excluded));
+  }
+
+  parts.push("</svg>");
 
   return parts.join("");
 }
@@ -107,16 +140,17 @@ function renderCurrentSection(input: {
   range: string;
   theme: ResolvedTheme;
   ringMaskId: string;
+  styles: { ring: string; flame: string; value: string; label: string; range: string };
 }): string {
-  const { x, circleY, flameY, valueY, labelY, rangeY, value, label, range, theme, ringMaskId } = input;
+  const { x, circleY, flameY, valueY, labelY, rangeY, value, label, range, theme, ringMaskId, styles } = input;
 
   return [
     `<g text-anchor='middle'>`,
-    `<circle cx='${x}' cy='${circleY}' r='40' fill='none' stroke='${escapeXml(theme.ring)}' stroke-width='5' mask='url(#${ringMaskId})'/>`,
-    `<path d='${flamePath}' transform='translate(${x} ${flameY}) scale(0.9)' fill='${escapeXml(theme.fire)}'/>`,
-    textLine(x, valueY, value, theme.currentStreakNumber, 28, 700),
-    textLine(x, labelY, label, theme.currentStreakLabel, 14, 700),
-    textLine(x, rangeY, range, theme.dateText, 12, 400),
+    `<circle cx='${x}' cy='${circleY}' r='40' fill='none' stroke='${escapeXml(theme.ring)}' stroke-width='5' mask='url(#${ringMaskId})'${styles.ring}/>`,
+    `<path d='${flamePath}' transform='translate(${x} ${flameY}) scale(0.9)' fill='${escapeXml(theme.fire)}'${styles.flame}/>`,
+    textLine(x, valueY, value, theme.currentStreakNumber, 28, 700, styles.value),
+    textLine(x, labelY, label, theme.currentStreakLabel, 14, 700, styles.label),
+    textLine(x, rangeY, range, theme.dateText, 12, 400, styles.range),
     `</g>`,
   ].join("");
 }
@@ -130,14 +164,15 @@ function renderSideSection(input: {
   label: string;
   range: string;
   theme: ResolvedTheme;
+  styles: { value: string; label: string; range: string };
 }): string {
-  const { x, valueY, labelY, rangeY, value, label, range, theme } = input;
+  const { x, valueY, labelY, rangeY, value, label, range, theme, styles } = input;
 
   return [
     `<g text-anchor='middle'>`,
-    textLine(x, valueY, value, theme.sideNumbers, 28, 700),
-    textLine(x, labelY, label, theme.sideLabels, 14, 400),
-    textLine(x, rangeY, range, theme.dateText, 12, 400),
+    textLine(x, valueY, value, theme.sideNumbers, 28, 700, styles.value),
+    textLine(x, labelY, label, theme.sideLabels, 14, 400, styles.label),
+    textLine(x, rangeY, range, theme.dateText, 12, 400, styles.range),
     `</g>`,
   ].join("");
 }
@@ -149,8 +184,9 @@ function textLine(
   fill: string,
   size: number,
   weight: number,
+  style = "",
 ): string {
-  return `<text x='${x}' y='${y}' fill='${escapeXml(fill)}' font-family='Segoe UI, Ubuntu, sans-serif' font-size='${size}' font-weight='${weight}'>${escapeXml(value)}</text>`;
+  return `<text x='${x}' y='${y}' fill='${escapeXml(fill)}' font-family='Segoe UI, Ubuntu, sans-serif' font-size='${size}' font-weight='${weight}'${style}>${escapeXml(value)}</text>`;
 }
 
 function divider(x: number, height: number, stroke: string): string {
@@ -163,6 +199,17 @@ function createVerticalScale(height: number): (value: number) => number {
   const scale = height / defaultHeight;
 
   return (value: number) => Number((value * scale).toFixed(2));
+}
+
+function excludedDaysLabel(
+  days: string[],
+  color: string,
+  y: (value: number) => number,
+  style = "",
+): string {
+  const text = `* Excluding ${days.join(", ")}`;
+  // 186 = 9px above the bottom of the default 195px-tall card (scaled by y())
+  return `<text x='12' y='${y(186)}' fill='${escapeXml(color)}' font-family='Segoe UI, Ubuntu, sans-serif' font-size='10' font-weight='400'${style}>${escapeXml(text)}</text>`;
 }
 
 function escapeXml(value: string): string {

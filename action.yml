@@ -1,5 +1,5 @@
 name: GitHub Readme Streak Stats
-description: Generate a GitHub contribution streak SVG in GitHub Actions.
+description: Generate GitHub contribution streak SVG or JSON in GitHub Actions.
 author: zients
 
 inputs:
@@ -8,7 +8,7 @@ inputs:
     required: false
     default: ""
   path:
-    description: Output path for the SVG file.
+    description: Output path for the SVG or JSON file.
     required: false
     default: profile/streak.svg
   token:
@@ -18,7 +18,7 @@ inputs:
 
 outputs:
   path:
-    description: Path where the SVG file was written.
+    description: Path where the SVG or JSON file was written.
 
 runs:
   using: node24

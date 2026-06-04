@@ -23,6 +23,7 @@ const dayAliases: Record<string, DayName> = {
 };
 
 export interface StreakOptions {
+  type: "svg" | "json";
   user: string;
   theme: string;
   hideBorder: boolean;
@@ -56,11 +57,12 @@ export function parseOptions(input: string): StreakOptions {
   const raw = parseRawOptions(input);
   const type = raw.type ?? "svg";
 
-  if (type !== "svg") {
-    throw new Error("This GitHub Action only supports SVG output.");
+  if (type !== "svg" && type !== "json") {
+    throw new Error("This GitHub Action only supports SVG or JSON output.");
   }
 
   return {
+    type,
     user: sanitizeUser(raw.user ?? process.env.GITHUB_REPOSITORY_OWNER ?? ""),
     theme: raw.theme ?? "default",
     hideBorder: parseBoolean(raw.hide_border, false),

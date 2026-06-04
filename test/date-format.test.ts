@@ -35,6 +35,21 @@ test("omits bracketed custom date tokens without re-tokenizing month names", () 
   );
 });
 
+test("supports extended custom date tokens", () => {
+  assert.equal(formatDate("2020-04-14", { locale: "en", dateFormat: "d F[, Y]" }), "14 April, 2020");
+  assert.equal(formatDate("2020-04-14", { locale: "en", dateFormat: "jS M" }), "14th Apr");
+  assert.equal(formatDate("2020-04-14", { locale: "en", dateFormat: "[Y.]n.j" }), "2020.4.14");
+  assert.equal(formatDate("2020-04-14", { locale: "en", dateFormat: "l, D" }), "Tuesday, Tue");
+  assert.equal(formatDate("2020-04-14", { locale: "en", dateFormat: "j/n/y" }), "14/4/20");
+});
+
+test("omits bracketed year in same-year range with extended tokens", () => {
+  assert.equal(
+    formatDateRange("2024-04-10", "2024-04-14", { locale: "en", dateFormat: "d F[, Y]" }),
+    "10 April - 14 April",
+  );
+});
+
 test("formats standard and short numbers", () => {
   assert.equal(formatNumber(1251, { locale: "en", shortNumbers: false }), "1,251");
   assert.equal(formatNumber(15200, { locale: "en", shortNumbers: true }), "15.2K");

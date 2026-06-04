@@ -73,3 +73,41 @@ test("respects hidden current streak section", () => {
   assert.doesNotMatch(svg, /Current Streak/);
   assert.match(svg, /Longest Streak/);
 });
+
+test("renders excluded-days label in daily mode using excludeDaysLabel color", () => {
+  const options = parseOptions("user=zients&exclude_days=Sat,Sun&excludeDaysLabel=abcdef&disable_animations=true");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+  assert.match(svg, /<text x='12' y='186'[^>]*>\* Excluding Sat, Sun<\/text>/);
+  assert.match(svg, /<text x='12' y='186'[^>]*fill='#abcdef'/);
+});
+
+test("omits excluded-days label when empty or weekly mode", () => {
+  const none = parseOptions("user=zients&disable_animations=true");
+  assert.doesNotMatch(renderSvg({ options: none, theme: resolveTheme(none), stats }), /Excluding/);
+  const weekly = parseOptions("user=zients&mode=weekly&exclude_days=Sat,Sun&disable_animations=true");
+  assert.doesNotMatch(renderSvg({ options: weekly, theme: resolveTheme(weekly), stats }), /Excluding/);
+});
+
+test("scales excluded-days label position with card height", () => {
+  const options = parseOptions("user=zients&exclude_days=Sat&card_height=390&disable_animations=true");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+  assert.match(svg, /<text x='12' y='372'[^>]*>\* Excluding Sat<\/text>/);
+});
+
+test("animates by default with staggered fade-in and number pop", () => {
+  const options = parseOptions("user=zients&theme=radical");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+  assert.match(svg, /@keyframes currstreak/);
+  assert.match(svg, /@keyframes fadein/);
+  assert.match(svg, /animation:currstreak \.6s linear forwards/);
+  assert.match(svg, /animation:fadein \.5s linear forwards 1\.2s/);
+  assert.match(svg, /<circle cx='247\.5' cy='71'[^>]*animation:fadein \.5s linear forwards \.4s/);
+});
+
+test("disable_animations produces static svg with no animation styles", () => {
+  const options = parseOptions("user=zients&theme=radical&disable_animations=true");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+  assert.doesNotMatch(svg, /@keyframes/);
+  assert.doesNotMatch(svg, /animation:/);
+  assert.doesNotMatch(svg, /opacity:0/);
+});

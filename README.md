@@ -1,12 +1,12 @@
 # GitHub README Streak Stats
 
-Generate a GitHub contribution streak SVG from a GitHub Action and commit it into your own repository.
+Generate GitHub contribution streak SVG or JSON output from a GitHub Action and commit it into your own repository.
 
 ## What It Does
 
-This action fetches a user's GitHub contribution calendar through GitHub GraphQL, calculates current and longest contribution streaks, renders an SVG card, and writes that SVG to the path you choose. It runs inside GitHub Actions with Node 24 and does not use a hosted image endpoint.
+This action fetches a user's GitHub contribution calendar through GitHub GraphQL, calculates current and longest contribution streaks, renders an SVG card or JSON stats, and writes the output to the path you choose. It runs inside GitHub Actions with Node 24 and does not use a hosted image endpoint.
 
-The generated card is static SVG. Current date and contribution-year selection use UTC from the action runtime.
+SVG output uses inline CSS animations by default; set `disable_animations=true` for a static card. Current date and contribution-year selection use UTC from the action runtime.
 
 ## Basic GitHub Actions Usage
 
@@ -97,8 +97,8 @@ After the workflow commits `profile/streak.svg`, reference it from your profile 
 | Option | Default | Current behavior |
 | --- | --- | --- |
 | `user` | `GITHUB_REPOSITORY_OWNER` if available | GitHub username to measure. Non-alphanumeric and non-hyphen characters are removed. The action fails if no username is available. |
-| `theme` | `default` | Theme name. Supported themes are `default`, `dark`, `highcontrast`, and `radical`. Unknown themes fall back to `default`. |
-| `type` | `svg` | Output type. Only `svg` is supported; any other value fails the action. |
+| `theme` | `default` | Theme name. Supported: `default`, `dark`, `highcontrast`, `radical`, `dracula`, `tokyonight`, `gruvbox`, `onedark`, `monokai`, `synthwave`, `merko`, `cobalt`, `prussian`, `vue`, `vue-dark`, `transparent`. Colors track upstream. Unknown themes fall back to `default`. |
+| `type` | `svg` | Output type. `svg` (default) renders the card; `json` writes the streak stats as JSON to `path`. Any other value (e.g. `png`) fails the action. Point `path` at a `.json` file when using `json`. |
 | `hide_border` | `false` | Hides the card border when true. |
 | `border_radius` | `4.5` | Positive card border radius. Invalid or non-positive values use the default. |
 | `background` | Theme value | Card background color override. Values without `#` are treated as hex colors; `transparent`, `url(...)`, and comma-based values are passed through. |
@@ -111,13 +111,13 @@ After the workflow commits `profile/streak.svg`, reference it from your profile 
 | `currStreakLabel` | Theme value | Current-streak label color override. |
 | `sideLabels` | Theme value | Total and longest streak label color override. |
 | `dates` | Theme value | Date and range text color override. |
-| `excludeDaysLabel` | Theme value | Parsed color override for compatibility; the current SVG renderer does not display an excluded-days label. |
-| `date_format` | Locale default date format | Custom date format. Supported tokens are `Y`, `M`, `n`, `j`, and `d`; this is not a full date-fns or Moment format parser. Bracketed text is included for single dates and for rendered ranges that include a year; it is omitted for same-year ranges. |
+| `excludeDaysLabel` | Theme value | Color of the excluded-days note rendered at the bottom-left when `exclude_days` is set (daily mode only). |
+| `date_format` | Locale default date format | Custom date format. Supported tokens: `Y` `y` `F` `M` `n` `l` `D` `j` `d` `S`. Month/weekday names follow `locale`. No backslash escaping - literal letters matching a token are substituted. Bracketed text is included for single dates and cross-year ranges, omitted for same-year ranges. |
 | `locale` | `en` | Locale used for number formatting and default date formatting. |
 | `short_numbers` | `false` | Uses compact number formatting when true. |
 | `mode` | `daily` | Streak mode. Use `daily` or `weekly`; only the exact value `weekly` switches to weekly mode. |
 | `exclude_days` | Empty | Daily mode only. Comma-separated weekdays such as `Sat,Sun` or full names. Excluded inactive days do not break an in-progress daily streak, but they do not start a streak by themselves. |
-| `disable_animations` | `false` | Accepted for option compatibility. The current SVG renderer emits static SVG either way. |
+| `disable_animations` | `false` | Disables the card's fade-in and current-streak number animations when true. Animations are pure CSS and run inside a README `<img>` embed (no external dependency). |
 | `card_width` | `495` | Positive SVG width. Invalid or non-positive values use the default. |
 | `card_height` | `195` | Positive SVG height. Invalid or non-positive values use the default. |
 | `hide_total_contributions` | `false` | Hides the total contributions section when true. |
