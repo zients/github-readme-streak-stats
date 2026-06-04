@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Generate streak stats
-        uses: zients/github-readme-streak-stats@v1
+        uses: zients/github-readme-streak-stats@v2
         with:
           options: user=${{ github.repository_owner }}&theme=radical&disable_animations=true
           path: profile/streak.svg
