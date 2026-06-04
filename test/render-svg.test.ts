@@ -93,3 +93,21 @@ test("scales excluded-days label position with card height", () => {
   const svg = renderSvg({ options, theme: resolveTheme(options), stats });
   assert.match(svg, /<text x='12' y='372'[^>]*>\* Excluding Sat<\/text>/);
 });
+
+test("animates by default with staggered fade-in and number pop", () => {
+  const options = parseOptions("user=zients&theme=radical");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+  assert.match(svg, /@keyframes currstreak/);
+  assert.match(svg, /@keyframes fadein/);
+  assert.match(svg, /animation:currstreak \.6s linear forwards/);
+  assert.match(svg, /animation:fadein \.5s linear forwards 1\.2s/);
+  assert.match(svg, /<circle cx='247\.5' cy='71'[^>]*animation:fadein \.5s linear forwards \.4s/);
+});
+
+test("disable_animations produces static svg with no animation styles", () => {
+  const options = parseOptions("user=zients&theme=radical&disable_animations=true");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+  assert.doesNotMatch(svg, /@keyframes/);
+  assert.doesNotMatch(svg, /animation:/);
+  assert.doesNotMatch(svg, /opacity:0/);
+});

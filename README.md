@@ -117,7 +117,7 @@ After the workflow commits `profile/streak.svg`, reference it from your profile 
 | `short_numbers` | `false` | Uses compact number formatting when true. |
 | `mode` | `daily` | Streak mode. Use `daily` or `weekly`; only the exact value `weekly` switches to weekly mode. |
 | `exclude_days` | Empty | Daily mode only. Comma-separated weekdays such as `Sat,Sun` or full names. Excluded inactive days do not break an in-progress daily streak, but they do not start a streak by themselves. |
-| `disable_animations` | `false` | Accepted for option compatibility. The current SVG renderer emits static SVG either way. |
+| `disable_animations` | `false` | Disables the card's fade-in and current-streak number animations when true. Animations are pure CSS and run inside a README `<img>` embed (no external dependency). |
 | `card_width` | `495` | Positive SVG width. Invalid or non-positive values use the default. |
 | `card_height` | `195` | Positive SVG height. Invalid or non-positive values use the default. |
 | `hide_total_contributions` | `false` | Hides the total contributions section when true. |
