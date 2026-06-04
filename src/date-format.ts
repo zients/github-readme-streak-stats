@@ -30,7 +30,7 @@ export function formatDateRange(start: string, end: string, options: FormatOptio
 
 function formatSingleDate(date: string, options: FormatOptions, includeYear: boolean): string {
   if (options.dateFormat) {
-    return applyCustomDateFormat(date, options.dateFormat, includeYear);
+    return applyCustomDateFormat(date, options.dateFormat, includeYear, options.locale);
   }
 
   const dateObj = new Date(`${date}T00:00:00Z`);
@@ -42,17 +42,36 @@ function formatSingleDate(date: string, options: FormatOptions, includeYear: boo
   }).format(dateObj);
 }
 
-function applyCustomDateFormat(date: string, format: string, includeBracketed: boolean): string {
+function applyCustomDateFormat(date: string, format: string, includeBracketed: boolean, locale: string): string {
   const dateObj = new Date(`${date}T00:00:00Z`);
   const activeFormat = format.replace(/\[([^\]]+)\]/g, includeBracketed ? "$1" : "");
+  const part = (opts: Intl.DateTimeFormatOptions): string =>
+    new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...opts }).format(dateObj);
+  const year = dateObj.getUTCFullYear();
+  const day = dateObj.getUTCDate();
 
   const replacements: Record<string, string> = {
-    Y: String(dateObj.getUTCFullYear()),
-    M: dateObj.toLocaleString("en", { timeZone: "UTC", month: "short" }),
+    Y: String(year),
+    y: String(year).slice(-2),
+    F: part({ month: "long" }),
+    M: part({ month: "short" }),
     n: String(dateObj.getUTCMonth() + 1),
-    j: String(dateObj.getUTCDate()),
-    d: String(dateObj.getUTCDate()).padStart(2, "0"),
+    l: part({ weekday: "long" }),
+    D: part({ weekday: "short" }),
+    j: String(day),
+    d: String(day).padStart(2, "0"),
+    S: ordinalSuffix(day),
   };
 
-  return activeFormat.replace(/[YMnjd]/g, (token) => replacements[token] ?? token);
+  return activeFormat.replace(/[YyFMnljdDS]/g, (token) => replacements[token] ?? token);
+}
+
+function ordinalSuffix(day: number): string {
+  const mod100 = day % 100;
+
+  if (mod100 >= 11 && mod100 <= 13) {
+    return "th";
+  }
+
+  return { 1: "st", 2: "nd", 3: "rd" }[day % 10] ?? "th";
 }

@@ -112,7 +112,7 @@ After the workflow commits `profile/streak.svg`, reference it from your profile 
 | `sideLabels` | Theme value | Total and longest streak label color override. |
 | `dates` | Theme value | Date and range text color override. |
 | `excludeDaysLabel` | Theme value | Color of the excluded-days note rendered at the bottom-left when `exclude_days` is set (daily mode only). |
-| `date_format` | Locale default date format | Custom date format. Supported tokens are `Y`, `M`, `n`, `j`, and `d`; this is not a full date-fns or Moment format parser. Bracketed text is included for single dates and for rendered ranges that include a year; it is omitted for same-year ranges. |
+| `date_format` | Locale default date format | Custom date format. Supported tokens: `Y` `y` `F` `M` `n` `l` `D` `j` `d` `S`. Month/weekday names follow `locale`. No backslash escaping - literal letters matching a token are substituted. Bracketed text is included for single dates and cross-year ranges, omitted for same-year ranges. |
 | `locale` | `en` | Locale used for number formatting and default date formatting. |
 | `short_numbers` | `false` | Uses compact number formatting when true. |
 | `mode` | `daily` | Streak mode. Use `daily` or `weekly`; only the exact value `weekly` switches to weekly mode. |
