@@ -161,7 +161,7 @@ class JavaScriptScanner {
   }
 
   private isLikelyTaggedTemplate(): boolean {
-    return /[A-Za-z0-9_$)\]]/.test(this.lastRawChar);
+    return /[A-Za-z0-9_$)\]}]/.test(this.lastSignificantCodeChar);
   }
 
   private canStartRegex(): boolean {

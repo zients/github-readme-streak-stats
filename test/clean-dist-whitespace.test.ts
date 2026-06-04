@@ -21,8 +21,15 @@ test("preserves untagged template literal trailing whitespace with escapes", () 
 });
 
 test("rejects likely tagged templates instead of changing raw string contents", () => {
-  assert.throws(
-    () => cleanJavaScriptTrailingWhitespace("tag`value  \n`;\n"),
-    /tagged template literal/i,
-  );
+  for (const input of [
+    "tag`value  \n`;\n",
+    "tag `value  \n`;\n",
+    "tag\n`value  \n`;\n",
+    "tag/* comment */`value  \n`;\n",
+  ]) {
+    assert.throws(
+      () => cleanJavaScriptTrailingWhitespace(input),
+      /tagged template literal/i,
+    );
+  }
 });
