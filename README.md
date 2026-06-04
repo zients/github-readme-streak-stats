@@ -1,12 +1,12 @@
 # GitHub README Streak Stats
 
-Generate a GitHub contribution streak SVG from a GitHub Action and commit it into your own repository.
+Generate GitHub contribution streak SVG or JSON output from a GitHub Action and commit it into your own repository.
 
 ## What It Does
 
-This action fetches a user's GitHub contribution calendar through GitHub GraphQL, calculates current and longest contribution streaks, renders an SVG card, and writes that SVG to the path you choose. It runs inside GitHub Actions with Node 24 and does not use a hosted image endpoint.
+This action fetches a user's GitHub contribution calendar through GitHub GraphQL, calculates current and longest contribution streaks, renders an SVG card or JSON stats, and writes the output to the path you choose. It runs inside GitHub Actions with Node 24 and does not use a hosted image endpoint.
 
-The generated card is static SVG. Current date and contribution-year selection use UTC from the action runtime.
+SVG output uses inline CSS animations by default; set `disable_animations=true` for a static card. Current date and contribution-year selection use UTC from the action runtime.
 
 ## Basic GitHub Actions Usage
 

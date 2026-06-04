@@ -1,7 +1,7 @@
 {
   "name": "github-readme-streak-stats",
   "version": "0.1.0",
-  "description": "Generate GitHub contribution streak SVGs in GitHub Actions.",
+  "description": "Generate GitHub contribution streak SVG or JSON output in GitHub Actions.",
   "type": "module",
   "private": false,
   "license": "MIT",
