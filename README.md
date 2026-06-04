@@ -112,18 +112,18 @@ After the workflow commits `profile/streak.svg`, reference it from your profile 
 | `sideLabels` | Theme value | Total and longest streak label color override. |
 | `dates` | Theme value | Date and range text color override. |
 | `excludeDaysLabel` | Theme value | Parsed color override for compatibility; the current SVG renderer does not display an excluded-days label. |
-| `date_format` | Locale default date format | Custom date format. Supported tokens are `Y`, `M`, `n`, `j`, and `d`; bracketed text is included only when the rendered range includes a year. |
+| `date_format` | Locale default date format | Custom date format. Supported tokens are `Y`, `M`, `n`, `j`, and `d`; this is not a full date-fns or Moment format parser. Bracketed text is included for single dates and for rendered ranges that include a year; it is omitted for same-year ranges. |
 | `locale` | `en` | Locale used for number formatting and default date formatting. |
 | `short_numbers` | `false` | Uses compact number formatting when true. |
 | `mode` | `daily` | Streak mode. Use `daily` or `weekly`; only the exact value `weekly` switches to weekly mode. |
-| `exclude_days` | Empty | Daily mode only. Comma-separated weekdays such as `Sat,Sun` or full names; excluded days do not break an in-progress daily streak. |
+| `exclude_days` | Empty | Daily mode only. Comma-separated weekdays such as `Sat,Sun` or full names. Excluded inactive days do not break an in-progress daily streak, but they do not start a streak by themselves. |
 | `disable_animations` | `false` | Accepted for option compatibility. The current SVG renderer emits static SVG either way. |
 | `card_width` | `495` | Positive SVG width. Invalid or non-positive values use the default. |
 | `card_height` | `195` | Positive SVG height. Invalid or non-positive values use the default. |
 | `hide_total_contributions` | `false` | Hides the total contributions section when true. |
 | `hide_current_streak` | `false` | Hides the current streak section when true. |
 | `hide_longest_streak` | `false` | Hides the longest streak section when true. |
-| `starting_year` | Current UTC year | First contribution calendar year to fetch. The action fetches through the current UTC year. |
+| `starting_year` | Current UTC year | First contribution calendar year to fetch. The action fetches through the current UTC year. Only positive numbers are used; invalid or non-positive values are ignored. |
 
 Boolean options are true only for `1`, `true`, `yes`, or `on`, case-insensitive.
 
