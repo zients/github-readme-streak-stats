@@ -1,0 +1,42 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { fetchContributionDays } from "../src/github.ts";
+
+test("flattens contribution days from GraphQL response", async () => {
+  const fetchImpl = async () =>
+    new Response(JSON.stringify({
+      data: {
+        user: {
+          createdAt: "2020-01-01T00:00:00Z",
+          contributionsCollection: {
+            contributionYears: [2026],
+            contributionCalendar: {
+              weeks: [
+                { contributionDays: [{ date: "2026-06-04", contributionCount: 2 }] },
+              ],
+            },
+          },
+        },
+      },
+    }), { status: 200 });
+
+  const days = await fetchContributionDays({
+    user: "zients",
+    token: "token",
+    startingYear: 2026,
+    currentYear: 2026,
+    fetchImpl,
+  });
+
+  assert.deepEqual(days, [{ date: "2026-06-04", contributionCount: 2 }]);
+});
+
+test("throws helpful errors for GraphQL errors", async () => {
+  const fetchImpl = async () =>
+    new Response(JSON.stringify({ errors: [{ message: "Bad credentials" }] }), { status: 200 });
+
+  await assert.rejects(
+    () => fetchContributionDays({ user: "zients", token: "bad", startingYear: 2026, currentYear: 2026, fetchImpl }),
+    /Bad credentials/,
+  );
+});
