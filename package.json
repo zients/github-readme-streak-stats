@@ -8,7 +8,7 @@
   "scripts": {
     "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "build": "ncc build src/index.ts --out dist --target es2023 --source-map --license licenses.txt",
+    "build": "ncc build src/index.ts --out dist --target es2023 --source-map --license licenses.txt && node scripts/clean-dist-whitespace.mjs",
     "verify": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
