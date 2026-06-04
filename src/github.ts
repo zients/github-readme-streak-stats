@@ -13,7 +13,7 @@ interface GitHubGraphQLError {
 }
 
 interface GitHubContributionWeek {
-  contributionDays?: ContributionDay[];
+  contributionDays?: unknown;
 }
 
 interface GitHubGraphQLPayload {
@@ -30,6 +30,8 @@ interface GitHubGraphQLPayload {
 }
 
 export async function fetchContributionDays(input: FetchContributionDaysInput): Promise<ContributionDay[]> {
+  validateRequiredInput(input);
+
   const currentYear = input.currentYear ?? new Date().getUTCFullYear();
   const firstYear = input.startingYear ?? currentYear;
   const fetchImpl = input.fetchImpl ?? fetch;
@@ -63,11 +65,12 @@ async function fetchContributionDaysForYear(
     }),
   });
 
-  const payload = await response.json() as GitHubGraphQLPayload;
-
   if (!response.ok) {
     throw new Error(`GitHub GraphQL request failed with HTTP ${response.status}.`);
   }
+
+  const payload = await response.json() as GitHubGraphQLPayload;
+
   if (payload.errors?.length) {
     throw new Error(payload.errors.map((error) => error.message).join("; "));
   }
@@ -82,7 +85,32 @@ async function fetchContributionDaysForYear(
     throw new Error("GitHub response did not include contribution calendar weeks.");
   }
 
-  return weeks.flatMap((week) => week.contributionDays ?? []);
+  return weeks.flatMap((week) => {
+    if (!Array.isArray(week.contributionDays)) {
+      throw new Error("GitHub response included malformed contribution calendar weeks.");
+    }
+    if (!week.contributionDays.every(isContributionDay)) {
+      throw new Error("GitHub response included malformed contribution calendar weeks.");
+    }
+
+    return week.contributionDays;
+  });
+}
+
+function validateRequiredInput(input: FetchContributionDaysInput): void {
+  if (typeof input.user !== "string" || input.user.trim() === "") {
+    throw new Error("GitHub user is required.");
+  }
+  if (typeof input.token !== "string" || input.token.trim() === "") {
+    throw new Error("GitHub token is required.");
+  }
+}
+
+function isContributionDay(day: unknown): day is ContributionDay {
+  return typeof day === "object"
+    && day !== null
+    && typeof (day as Partial<ContributionDay>).date === "string"
+    && typeof (day as Partial<ContributionDay>).contributionCount === "number";
 }
 
 function buildContributionQuery(): string {
