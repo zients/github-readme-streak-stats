@@ -98,7 +98,7 @@ After the workflow commits `profile/streak.svg`, reference it from your profile 
 | --- | --- | --- |
 | `user` | `GITHUB_REPOSITORY_OWNER` if available | GitHub username to measure. Non-alphanumeric and non-hyphen characters are removed. The action fails if no username is available. |
 | `theme` | `default` | Theme name. Supported: `default`, `dark`, `highcontrast`, `radical`, `dracula`, `tokyonight`, `gruvbox`, `onedark`, `monokai`, `synthwave`, `merko`, `cobalt`, `prussian`, `vue`, `vue-dark`, `transparent`. Colors track upstream. Unknown themes fall back to `default`. |
-| `type` | `svg` | Output type. Only `svg` is supported; any other value fails the action. |
+| `type` | `svg` | Output type. `svg` (default) renders the card; `json` writes the streak stats as JSON to `path`. Any other value (e.g. `png`) fails the action. Point `path` at a `.json` file when using `json`. |
 | `hide_border` | `false` | Hides the card border when true. |
 | `border_radius` | `4.5` | Positive card border radius. Invalid or non-positive values use the default. |
 | `background` | Theme value | Card background color override. Values without `#` are treated as hex colors; `transparent`, `url(...)`, and comma-based values are passed through. |

@@ -35,10 +35,15 @@ describe("parseOptions", () => {
     assert.equal(options.borderRadius, 4.5);
   });
 
-  it("rejects non-svg output type", () => {
+  it("accepts json output type and defaults to svg", () => {
+    assert.equal(parseOptions("user=zients").type, "svg");
+    assert.equal(parseOptions("user=zients&type=json").type, "json");
+  });
+
+  it("rejects unsupported output type", () => {
     assert.throws(
       () => parseOptions("user=zients&type=png"),
-      /only supports SVG output/i,
+      /only supports SVG or JSON/i,
     );
   });
 
