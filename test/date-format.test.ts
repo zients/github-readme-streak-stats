@@ -17,6 +17,13 @@ test("supports bracketed custom date format", () => {
   );
 });
 
+test("omits bracketed custom date tokens without re-tokenizing month names", () => {
+  assert.equal(
+    formatDateRange("2026-06-03", "2026-06-04", { locale: "en", dateFormat: "M j[, Y]" }),
+    "Jun 3 - Jun 4",
+  );
+});
+
 test("formats standard and short numbers", () => {
   assert.equal(formatNumber(1251, { locale: "en", shortNumbers: false }), "1,251");
   assert.equal(formatNumber(15200, { locale: "en", shortNumbers: true }), "15.2K");
