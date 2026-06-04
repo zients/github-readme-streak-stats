@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseOptions } from "../src/options.ts";
-import { resolveTheme } from "../src/themes.ts";
+import { parseOptions } from "../src/options.js";
+import { resolveTheme } from "../src/themes.js";
 
 test("resolves radical theme colors", () => {
   const theme = resolveTheme(parseOptions("user=zients&theme=radical"));

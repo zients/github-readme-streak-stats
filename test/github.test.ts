@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fetchContributionDays } from "../src/github.ts";
+import { fetchContributionDays } from "../src/github.js";
 
 test("flattens contribution days from GraphQL response", async () => {
   const fetchImpl = async () =>

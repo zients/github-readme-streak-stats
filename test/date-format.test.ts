@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatDate, formatDateRange, formatNumber } from "../src/date-format.ts";
+import { formatDate, formatDateRange, formatNumber } from "../src/date-format.js";
 
 test("formats single dates with year by default", () => {
   assert.equal(formatDate("2019-07-19", { locale: "en" }), "Jul 19, 2019");

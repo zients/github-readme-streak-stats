@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { parseOptions } from "../src/options.ts";
+import { parseOptions } from "../src/options.js";
 
 describe("parseOptions", () => {
   it("parses query-string options", () => {

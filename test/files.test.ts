@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { writeFileAtomically } from "../src/files.ts";
+import { writeFileAtomically } from "../src/files.js";
 
 test("writes file and creates parent directories", async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), "streak-action-"));

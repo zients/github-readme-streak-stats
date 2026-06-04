@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculateStats } from "../src/stats.ts";
+import { calculateStats } from "../src/stats.js";
 
 const baseOptions = {
   mode: "daily" as const,
