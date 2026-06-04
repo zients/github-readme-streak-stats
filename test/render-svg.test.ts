@@ -24,6 +24,21 @@ test("renders radical three-column SVG", () => {
   assert.match(svg, />\s*14\s*</);
 });
 
+test("uses Denver-style default card coordinates", () => {
+  const options = parseOptions("user=zients&theme=radical");
+  const svg = renderSvg({ options, theme: resolveTheme(options), stats });
+
+  assert.match(svg, /<line x1='165' y1='28' x2='165' y2='170'/);
+  assert.match(svg, /<text x='82\.5' y='80'[^>]*>1,251<\/text>/);
+  assert.match(svg, /<text x='82\.5' y='116'[^>]*>Total Contributions<\/text>/);
+  assert.match(svg, /<text x='82\.5' y='146'[^>]*>Since Jul 19, 2019<\/text>/);
+  assert.match(svg, /<circle cx='247\.5' cy='71' r='40'[^>]*mask='url\(#streak-ring-mask\)'/);
+  assert.match(svg, /transform='translate\(247\.5 19\.5\) scale\(0\.9\)'/);
+  assert.match(svg, /<text x='247\.5' y='80'[^>]*>14<\/text>/);
+  assert.match(svg, /<text x='247\.5' y='140'[^>]*>Current Streak<\/text>/);
+  assert.match(svg, /<text x='247\.5' y='166'[^>]*>May 22 - Jun 4<\/text>/);
+});
+
 test("escapes user-controlled text", () => {
   const options = parseOptions("user=zients&theme=radical");
   const svg = renderSvg({

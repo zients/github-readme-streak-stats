@@ -31303,6 +31303,7 @@ function applyCustomDateFormat(date, format, includeBracketed) {
 ;// CONCATENATED MODULE: ./src/render-svg.ts
 
 const flamePath = "M 1.5 0.67 C 1.5 0.67 2.24 3.32 2.24 5.47 C 2.24 7.53 0.89 9.2 -1.17 9.2 C -3.23 9.2 -4.79 7.53 -4.79 5.47 L -4.76 5.11 C -6.78 7.51 -8 10.62 -8 13.99 C -8 18.41 -4.42 22 0 22 C 4.42 22 8 18.41 8 13.99 C 8 8.6 5.41 3.79 1.5 0.67 Z";
+const defaultHeight = 195;
 function renderSvg(input) {
     const { options, theme, stats } = input;
     const width = options.cardWidth;
@@ -31310,9 +31311,10 @@ function renderSvg(input) {
     const radius = Math.min(options.borderRadius, width / 2, height / 2);
     const columnWidth = width / 3;
     const centerX = width / 2;
-    const centerY = height / 2;
+    const y = createVerticalScale(height);
     const title = input.title ?? `${options.user}'s GitHub Streak`;
     const clipId = "streak-card-clip";
+    const ringMaskId = "streak-ring-mask";
     const numberOptions = { locale: options.locale, shortNumbers: options.shortNumbers };
     const dateOptions = options.dateFormat === undefined
         ? { locale: options.locale }
@@ -31320,7 +31322,7 @@ function renderSvg(input) {
     const parts = [
         `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} ${height}' width='${width}px' height='${height}px' role='img' aria-label='${escapeXml(title)}'>`,
         `<title>${escapeXml(title)}</title>`,
-        `<defs><clipPath id='${clipId}'><rect width='${width}' height='${height}' rx='${radius}'/></clipPath></defs>`,
+        `<defs><clipPath id='${clipId}'><rect width='${width}' height='${height}' rx='${radius}'/></clipPath><mask id='${ringMaskId}'><rect width='${width}' height='${height}' fill='white'/><ellipse cx='${centerX}' cy='${y(32)}' rx='13' ry='18' fill='black'/></mask></defs>`,
         `<rect width='${width}' height='${height}' rx='${radius}' fill='${escapeXml(theme.background)}'/>`,
         `<g clip-path='url(#${clipId})'>`,
     ];
@@ -31333,7 +31335,9 @@ function renderSvg(input) {
     if (!options.hideTotalContributions) {
         parts.push(renderSideSection({
             x: columnWidth / 2,
-            y: centerY,
+            valueY: y(80),
+            labelY: y(116),
+            rangeY: y(146),
             value: formatNumber(stats.totalContributions, numberOptions),
             label: "Total Contributions",
             range: stats.firstContribution === "" ? "" : `Since ${formatDate(stats.firstContribution, dateOptions)}`,
@@ -31343,17 +31347,24 @@ function renderSvg(input) {
     if (!options.hideCurrentStreak) {
         parts.push(renderCurrentSection({
             x: centerX,
-            y: centerY,
+            circleY: y(71),
+            flameY: y(19.5),
+            valueY: y(80),
+            labelY: y(140),
+            rangeY: y(166),
             value: formatNumber(stats.currentStreak.length, numberOptions),
             label: "Current Streak",
             range: formatDateRange(stats.currentStreak.start, stats.currentStreak.end, dateOptions),
             theme,
+            ringMaskId,
         }));
     }
     if (!options.hideLongestStreak) {
         parts.push(renderSideSection({
             x: columnWidth * 2.5,
-            y: centerY,
+            valueY: y(80),
+            labelY: y(116),
+            rangeY: y(146),
             value: formatNumber(stats.longestStreak.length, numberOptions),
             label: "Longest Streak",
             range: formatDateRange(stats.longestStreak.start, stats.longestStreak.end, dateOptions),
@@ -31364,25 +31375,24 @@ function renderSvg(input) {
     return parts.join("");
 }
 function renderCurrentSection(input) {
-    const { x, y, value, label, range, theme } = input;
+    const { x, circleY, flameY, valueY, labelY, rangeY, value, label, range, theme, ringMaskId } = input;
     return [
         `<g text-anchor='middle'>`,
-        `<circle cx='${x}' cy='${y - 18}' r='40' fill='none' stroke='${escapeXml(theme.stroke)}' stroke-width='2' opacity='0.35'/>`,
-        `<circle cx='${x}' cy='${y - 18}' r='40' fill='none' stroke='${escapeXml(theme.ring)}' stroke-width='4' stroke-linecap='round'/>`,
-        `<path d='${flamePath}' transform='translate(${x} ${y - 54}) scale(0.9)' fill='${escapeXml(theme.fire)}'/>`,
-        textLine(x, y - 6, value, theme.currentStreakNumber, 32, 700),
-        textLine(x, y + 28, label, theme.currentStreakLabel, 14, 600),
-        textLine(x, y + 51, range, theme.dateText, 12, 400),
+        `<circle cx='${x}' cy='${circleY}' r='40' fill='none' stroke='${escapeXml(theme.ring)}' stroke-width='5' mask='url(#${ringMaskId})'/>`,
+        `<path d='${flamePath}' transform='translate(${x} ${flameY}) scale(0.9)' fill='${escapeXml(theme.fire)}'/>`,
+        textLine(x, valueY, value, theme.currentStreakNumber, 28, 700),
+        textLine(x, labelY, label, theme.currentStreakLabel, 14, 700),
+        textLine(x, rangeY, range, theme.dateText, 12, 400),
         `</g>`,
     ].join("");
 }
 function renderSideSection(input) {
-    const { x, y, value, label, range, theme } = input;
+    const { x, valueY, labelY, rangeY, value, label, range, theme } = input;
     return [
         `<g text-anchor='middle'>`,
-        textLine(x, y - 22, value, theme.sideNumbers, 26, 700),
-        textLine(x, y + 10, label, theme.sideLabels, 13, 600),
-        textLine(x, y + 32, range, theme.dateText, 11, 400),
+        textLine(x, valueY, value, theme.sideNumbers, 28, 700),
+        textLine(x, labelY, label, theme.sideLabels, 14, 400),
+        textLine(x, rangeY, range, theme.dateText, 12, 400),
         `</g>`,
     ].join("");
 }
@@ -31390,7 +31400,12 @@ function textLine(x, y, value, fill, size, weight) {
     return `<text x='${x}' y='${y}' fill='${escapeXml(fill)}' font-family='Segoe UI, Ubuntu, sans-serif' font-size='${size}' font-weight='${weight}'>${escapeXml(value)}</text>`;
 }
 function divider(x, height, stroke) {
-    return `<line x1='${x}' y1='26' x2='${x}' y2='${height - 26}' stroke='${escapeXml(stroke)}' stroke-width='1' opacity='0.35'/>`;
+    const y = createVerticalScale(height);
+    return `<line x1='${x}' y1='${y(28)}' x2='${x}' y2='${y(170)}' stroke='${escapeXml(stroke)}' stroke-width='1' opacity='0.35'/>`;
+}
+function createVerticalScale(height) {
+    const scale = height / defaultHeight;
+    return (value) => Number((value * scale).toFixed(2));
 }
 function escapeXml(value) {
     return value
