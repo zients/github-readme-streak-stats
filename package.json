@@ -2,9 +2,27 @@
   "name": "github-readme-streak-stats",
   "version": "0.1.0",
   "description": "Generate GitHub contribution streak SVG or JSON output in GitHub Actions.",
+  "keywords": [
+    "github-actions",
+    "github-action",
+    "streak",
+    "streak-stats",
+    "github-readme",
+    "contributions",
+    "svg",
+    "profile-readme"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zients/github-readme-streak-stats.git"
+  },
+  "author": "Zients",
   "type": "module",
   "private": false,
   "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
