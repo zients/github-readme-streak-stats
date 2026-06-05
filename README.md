@@ -1,6 +1,7 @@
 # GitHub README Streak Stats
 
 [![CI](https://github.com/zients/github-readme-streak-stats/actions/workflows/ci.yml/badge.svg)](https://github.com/zients/github-readme-streak-stats/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Generate GitHub contribution streak SVG or JSON output from a GitHub Action and commit it into your own repository.
 
